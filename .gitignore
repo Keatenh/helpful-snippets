@@ -1,0 +1,10 @@
+build
+.gradle
+bin
+.settings
+.vscode
+.classpath
+.project
+**/*.pyc
+local_only
+**/node_modules
