@@ -1,0 +1,92 @@
+service: todo-app-kindof #Name of service made up of lambdas, resources
+
+frameworkVersion: ">=1.1.0 <2.0.0"
+
+plugins: #Additional code added for framework functionality
+  - serverless-dynamodb-local
+  - serverless-offline
+
+custom: #Custom property to add vars that can be accessed via ${self:custom.propName}, also used by plugins
+  dynamodb: #related to ddb-local plugin
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+    # migration:
+    #   dir: offline/migrations
+
+provider: #Property for Cloud Provider setup (AWS)
+  name: aws
+  runtime: nodejs8.10
+  # environment:
+  #   DYNAMODB_TABLE: ${file(configs/${opt:stage, self:provider.stage}.json):table}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/TodoTable"
+      # Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+
+package: #Top level packaging of code in svc, what goes into Lambda
+  exclude:
+    - ./**
+  include:
+    - src/**
+    # - node_modules/**
+    # - lambdas/**
+
+functions:  #Holds definitions for each Lambda in service, can access own package rules, 
+            #environment variables to override top level declarations 
+  create:
+    handler: functions/todo/create.handler
+    environment:
+      DYNAMODB_TABLE: ThatTodoTable
+      # DYNAMODB_TABLE: TodoTable
+    events:
+      - http:
+          path: api/todos
+          method: post
+
+  list:
+    handler: functions/todo/list.handler
+    environment:
+      DYNAMODB_TABLE: TodoTable
+    events:
+      - http:
+          path: api/todos
+          method: get
+
+  get:
+    handler: functions/todo/get.handler
+    environment:
+      DYNAMODB_TABLE: TodoTable
+      VERY_USEFUL: ${file(configs/${opt:stage, self:provider.stage}.json):date}
+    events:
+      - http:
+          path: api/todos/{id}
+          method: get
+
+resources: # Other resources determined by the resultant Cloudformation template can be declared, accessed here
+  Resources:
+    TodosDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: id
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: TodoTable
+        # TableName: ${self:provider.environment.DYNAMODB_TABLE}

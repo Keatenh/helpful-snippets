@@ -8,3 +8,33 @@ bin
 **/*.pyc
 local_only
 **/node_modules
+**/.serverless
+**/archive
+# Operating system files
+.DS_Store
+.DS_Store?
+
+# Node and NPM
+node_modules
+jspm_packages
+.node_repl_history
+.npm
+.grunt
+
+# IDE files
+.vs
+typings
+
+# Certificates
+# Never, ever, ever, ever check this in to git. No exceptions.
+.csr
+.cer
+.der
+.crt
+.p7b
+.p7r
+.spc
+.pfx
+.p12
+.pem
+.key
